@@ -6,9 +6,10 @@ import { ExtractedDataDisplay } from './ExtractedDataDisplay';
 import { Loader2, Zap, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure PDF.js worker (use local bundler URL to avoid CORS/fake-worker)
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface ExtractedData {
   nome: string;
@@ -39,60 +40,66 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
   const { toast } = useToast();
 
   const extractDataFromText = (text: string): ExtractedData => {
-    // Regex patterns for data extraction
-    const patterns = {
-      nome: /(?:nome empresarial|razao social|empresa)[:\s]*([^\n\r]+)/i,
-      cnpj: /(?:cnpj|cadastro)[:\s]*([0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/[0-9]{4}-?[0-9]{2})/i,
-      telefone: /(?:telefone|fone|tel)[:\s]*(\(?[0-9]{2}\)?[.\s-]?[0-9]{4,5}[.\s-]?[0-9]{4})/i,
-      email: /(?:email|e-mail|endereco eletronico)[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-      rua: /(?:logradouro|endereco|rua)[:\s]*([^\n\r,]+?)(?:[,\n\r]|numero)/i,
-      numero: /(?:numero|n[°º]?)[:\s]*([0-9A-Za-z\s]+)/i,
-      complemento: /(?:complemento|compl)[:\s]*([^\n\r]+)/i,
-      bairro: /(?:bairro|distrito)[:\s]*([^\n\r]+)/i,
-      cep: /(?:cep)[:\s]*([0-9]{5}[.-]?[0-9]{3})/i,
-      cidade: /(?:cidade|municipio)[:\s]*([^\n\r]+)/i,
-      estado: /(?:estado|uf)[:\s]*([A-Z]{2})/i,
+    // Normaliza quebras de linha para regex mais preciso
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    // Escapa rótulos com caracteres especiais (/, (), etc.)
+    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Extrai o valor que aparece na linha seguinte ao rótulo ou na mesma linha após ':'
+    const extractLineAfter = (label: string) => {
+      const l = esc(label);
+      const patterns = [
+        new RegExp(`${l}\\s*[\\r\\n]+\\s*([^\\r\\n]+)`, 'i'), // rótulo em uma linha e valor na próxima
+        new RegExp(`${l}\\s*[:\\-]?\\s*([^\\r\\n]+)`, 'i'),      // rótulo e valor na mesma linha
+      ];
+      for (const p of patterns) {
+        const m = normalized.match(p);
+        if (m) return m[1].trim();
+      }
+      return null;
     };
 
-    const extracted: Partial<ExtractedData> = {};
+    const nome = extractLineAfter('NOME EMPRESARIAL')
+      || normalized.match(/(?:nome empresarial|razao social|empresa)[:\s]*([^\n\r]+)/i)?.[1]?.trim()
+      || 'NÃO ENCONTRADO';
 
-    // Extract basic data
-    Object.entries(patterns).forEach(([key, pattern]) => {
-      const match = text.match(pattern);
-      if (match) {
-        const value = match[1].trim();
-        if (key === 'rua' || key === 'numero' || key === 'complemento' || key === 'bairro' || key === 'cep' || key === 'cidade' || key === 'estado') {
-          if (!extracted.endereco) extracted.endereco = {} as any;
-          (extracted.endereco as any)[key] = value;
-        } else {
-          (extracted as any)[key] = value;
-        }
-      }
-    });
+    const cnpj = extractLineAfter('NUMERO DE INSCRIÇÃO')
+      || normalized.match(/(?:cnpj|cadastro)[:\s]*([0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/[0-9]{4}-?[0-9]{2})/i)?.[1]?.trim()
+      || 'NÃO ENCONTRADO';
 
-    // Combine rua and numero
-    if (extracted.endereco?.rua) {
-      const numeroMatch = text.match(patterns.numero);
-      if (numeroMatch) {
-        extracted.endereco.rua = `${extracted.endereco.rua} ${numeroMatch[1].trim()}`;
-      }
-    }
+    const telefone = extractLineAfter('TELEFONE')
+      || normalized.match(/(?:telefone|fone|tel)[:\s]*(\(?[0-9]{2}\)?[.\s-]?[0-9]{4,5}[.\s-]?[0-9]{4})/i)?.[1]?.trim()
+      || 'NÃO ENCONTRADO';
 
-    // Set default values for missing fields
+    const email = extractLineAfter('ENDEREÇO ELETRONICO')
+      || normalized.match(/(?:email|e-mail|endereco eletronico)[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)?.[1]?.trim()
+      || 'NÃO ENCONTRADO';
+
+    const logradouro = extractLineAfter('LOGRADOURO') || '';
+    const numero = extractLineAfter('NUMERO') || '';
+    const complemento = extractLineAfter('COMPLEMENTO') || '';
+    const bairro = extractLineAfter('BAIRRO/DISTRITO') || extractLineAfter('BAIRRO') || 'NÃO ENCONTRADO';
+    const cep = extractLineAfter('CEP') || 'NÃO ENCONTRADO';
+    const cidade = extractLineAfter('MUNICIPIO') || 'NÃO ENCONTRADO';
+    const estado = extractLineAfter('UF') || 'NÃO ENCONTRADO';
+
+    const rua = [logradouro, numero].filter(Boolean).join(' ').trim() || 'Rua não encontrada';
+
     return {
-      nome: extracted.nome || "Nome não encontrado",
-      cnpj: extracted.cnpj || "CNPJ não encontrado",
-      telefone: extracted.telefone || "Telefone não encontrado",
-      email: extracted.email || "Email não encontrado",
+      nome: nome || 'Nome não encontrado',
+      cnpj: cnpj || 'CNPJ não encontrado',
+      telefone: telefone || 'Telefone não encontrado',
+      email: email || 'Email não encontrado',
       endereco: {
-        rua: extracted.endereco?.rua || "Rua não encontrada",
-        complemento: extracted.endereco?.complemento || "",
-        bairro: extracted.endereco?.bairro || "Bairro não encontrado",
-        cep: extracted.endereco?.cep || "CEP não encontrado",
-        cidade: extracted.endereco?.cidade || "Cidade não encontrada",
-        estado: extracted.endereco?.estado || "UF",
-        pais: "Brasil"
-      }
+        rua,
+        complemento: complemento || '',
+        bairro: bairro || 'Bairro não encontrado',
+        cep: cep || 'CEP não encontrado',
+        cidade: cidade || 'Cidade não encontrada',
+        estado: (estado && estado !== 'NÃO ENCONTRADO') ? estado : 'UF',
+        pais: 'Brasil',
+      },
     };
   };
 
@@ -105,8 +112,14 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(' ');
+        .map((item: any) => {
+          const s = item.str || '';
+          const eol = item.hasEOL === true ? '\n' : ' ';
+          return s + eol;
+        })
+        .join('')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{2,}/g, '\n');
       fullText += pageText + '\n';
     }
 
