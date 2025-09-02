@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-// Configure PDF.js worker (use local bundler URL to avoid CORS/fake-worker)
+// Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 interface ExtractedData {
@@ -86,25 +86,34 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
     };
   };
 
+  // VERSÃO CORRIGIDA E MAIS ROBUSTA DA FUNÇÃO DE LEITURA DE PDF
   const processPDF = async (file: File): Promise<string> => {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    const pdf = await loadingTask.promise;
+    const numPages = pdf.numPages;
     let fullText = '';
 
-    for (let i = 1; i <= pdf.numPages; i++) {
+    for (let i = 1; i <= numPages; i++) {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => {
-          const s = item.str || '';
-          // Adiciona espaço ou nova linha baseado no hasEOL para manter a estrutura
-          const eol = item.hasEOL === true ? '\n' : ' ';
-          return s + eol;
-        })
-        .join('')
-        .replace(/[ \t]+\n/g, '\n') // Limpa espaços antes de novas linhas
-        .replace(/\n{2,}/g, '\n'); // Limpa múltiplas novas linhas
-      fullText += pageText + '\n';
+      
+      if (textContent.items) {
+        let lastY = -1;
+        textContent.items.forEach((item: any) => {
+          // Adiciona quebra de linha se o item estiver em uma nova linha no PDF
+          if (lastY !== -1 && Math.abs(item.transform[5] - lastY) > 5) {
+            fullText += '\n';
+          }
+          fullText += item.str + ' ';
+          lastY = item.transform[5];
+        });
+      }
+      fullText += '\n\n'; // Adiciona uma separação clara entre as páginas
+    }
+
+    if (!fullText.trim()) {
+        throw new Error("Nenhum texto pôde ser extraído do PDF. O arquivo pode ser uma imagem.");
     }
 
     return fullText;
@@ -123,14 +132,13 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
 
     try {
       let text = '';
-
       if (selectedFile.type === 'application/pdf') {
         text = await processPDF(selectedFile);
       } else {
         text = await processTextFile(selectedFile);
       }
 
-      setRawText(text);
+      setRawText(text); // Isso deve agora mostrar o texto extraído
       const data = extractDataFromText(text);
       setExtractedData(data);
 
@@ -138,11 +146,12 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
         title: "Processamento concluído!",
         description: "Dados extraídos com sucesso do arquivo.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error processing file:', error);
+      setRawText(error.message || 'Ocorreu um erro desconhecido durante a extração.');
       toast({
         title: "Erro no processamento",
-        description: "Não foi possível processar o arquivo. Tente novamente.",
+        description: error.message || "Não foi possível processar o arquivo.",
         variant: "destructive"
       });
     } finally {
@@ -213,7 +222,7 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
         </Card>
 
         {/* Results Section */}
-        {extractedData && (
+        {(extractedData || rawText) && (
           <ExtractedDataDisplay
             data={extractedData}
             rawText={rawText}
