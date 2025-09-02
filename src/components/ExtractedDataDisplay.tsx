@@ -629,31 +629,35 @@ loadLinks().then(renderLinks);`;
   };
 
   return (
-    <Card className="bg-card/30 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className="bg-card/30 backdrop-blur-sm max-w-full">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
           <Code className="w-5 h-5 text-primary" />
           Dados Extraídos
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 sm:px-6">
         <Tabs defaultValue={data ? "code" : "raw"} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="code" className="flex items-center gap-2" disabled={!data}>
-              <Code className="w-4 h-4" />
-              Código JS
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 p-1">
+            <TabsTrigger value="code" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4" disabled={!data}>
+              <Code className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Código</span>
+              <span className="xs:hidden">JS</span>
             </TabsTrigger>
-            <TabsTrigger value="popup" className="flex items-center gap-2" disabled={!data}>
-              <Puzzle className="w-4 h-4" />
-              Extensão Popup
+            <TabsTrigger value="popup" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4" disabled={!data}>
+              <Puzzle className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Popup</span>
+              <span className="xs:hidden">Ext</span>
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2" disabled={!data}>
-              <Eye className="w-4 h-4" />
-              Visualização
+            <TabsTrigger value="preview" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4" disabled={!data}>
+              <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Preview</span>
+              <span className="xs:hidden">Ver</span>
             </TabsTrigger>
-            <TabsTrigger value="raw" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Texto Original
+            <TabsTrigger value="raw" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Original</span>
+              <span className="xs:hidden">Txt</span>
             </TabsTrigger>
           </TabsList>
 
@@ -661,30 +665,31 @@ loadLinks().then(renderLinks);`;
             {data ? (
               <>
                 <div className="relative">
-                  <pre className="bg-muted/20 p-4 rounded-lg text-sm overflow-x-auto border">
-                    <code>{jsCode}</code>
+                  <pre className="bg-muted/20 p-2 sm:p-4 rounded-lg text-xs sm:text-sm overflow-x-auto border max-w-full">
+                    <code className="block whitespace-pre-wrap break-words sm:whitespace-pre">{jsCode}</code>
                   </pre>
                   
                   <Button
                     onClick={handleCopyCode}
-                    className="absolute top-2 right-2 bg-gradient-primary hover:scale-105 transition-all duration-200"
+                    className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gradient-primary hover:scale-105 transition-all duration-200 h-8 w-auto sm:h-9 px-2 sm:px-3"
                     size="sm"
                   >
                     {copied ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Copiado!
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm">Copiado!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copiar Código
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm hidden xs:inline">Copiar</span>
+                        <span className="text-xs xs:hidden">Copy</span>
                       </>
                     )}
                   </Button>
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   ✨ Código JavaScript pronto para uso com todos os dados extraídos do arquivo.
                 </p>
               </>
@@ -700,30 +705,31 @@ loadLinks().then(renderLinks);`;
             {data ? (
               <>
                 <div className="relative">
-                  <pre className="bg-muted/20 p-4 rounded-lg text-sm overflow-x-auto border">
-                    <code>{popupCode}</code>
+                  <pre className="bg-muted/20 p-2 sm:p-4 rounded-lg text-xs sm:text-sm overflow-x-auto border max-w-full">
+                    <code className="block whitespace-pre-wrap break-words sm:whitespace-pre">{popupCode}</code>
                   </pre>
                   
                   <Button
                     onClick={handleCopyPopupCode}
-                    className="absolute top-2 right-2 bg-gradient-primary hover:scale-105 transition-all duration-200"
+                    className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-gradient-primary hover:scale-105 transition-all duration-200 h-8 w-auto sm:h-9 px-2 sm:px-3"
                     size="sm"
                   >
                     {copiedPopup ? (
                       <>
-                        <Check className="w-4 h-4 mr-2" />
-                        Copiado!
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm">Copiado!</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copiar Código
+                        <Copy className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                        <span className="text-xs sm:text-sm hidden xs:inline">Copiar</span>
+                        <span className="text-xs xs:hidden">Copy</span>
                       </>
                     )}
                   </Button>
                 </div>
                 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   🔌 Código JavaScript específico para preencher os campos da extensão popup automaticamente.
                 </p>
               </>
@@ -737,23 +743,23 @@ loadLinks().then(renderLinks);`;
 
           <TabsContent value="preview" className="space-y-4">
             {data ? (
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-primary">Dados da Empresa</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                  <h3 className="font-semibold text-primary text-sm sm:text-base">Dados da Empresa</h3>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Nome:</span>
-                      <span className="font-medium">{data.nome}</span>
+                      <span className="font-medium break-words">{data.nome}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">CNPJ:</span>
-                      <span className="font-mono">{data.cnpj}</span>
+                      <span className="font-mono break-words">{data.cnpj}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Telefone:</span>
-                      <span>{data.telefone}</span>
+                      <span className="break-words">{data.telefone}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">E-mail:</span>
                       <span className="break-all">{data.email}</span>
                     </div>
@@ -761,33 +767,33 @@ loadLinks().then(renderLinks);`;
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-primary">Endereço</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
+                  <h3 className="font-semibold text-primary text-sm sm:text-base">Endereço</h3>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Rua:</span>
-                      <span className="font-medium text-right">{data.endereco.rua}</span>
+                      <span className="font-medium break-words text-right">{data.endereco.rua}</span>
                     </div>
                     {data.endereco.complemento && (
-                      <div className="flex justify-between">
+                      <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                         <span className="text-muted-foreground">Complemento:</span>
-                        <span>{data.endereco.complemento}</span>
+                        <span className="break-words">{data.endereco.complemento}</span>
                       </div>
                     )}
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Bairro:</span>
-                      <span>{data.endereco.bairro}</span>
+                      <span className="break-words">{data.endereco.bairro}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">CEP:</span>
-                      <span className="font-mono">{data.endereco.cep}</span>
+                      <span className="font-mono break-words">{data.endereco.cep}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Cidade:</span>
-                      <span>{data.endereco.cidade}</span>
+                      <span className="break-words">{data.endereco.cidade}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex flex-col xs:flex-row xs:justify-between gap-1 xs:gap-0">
                       <span className="text-muted-foreground">Estado:</span>
-                      <span>{data.endereco.estado}</span>
+                      <span className="break-words">{data.endereco.estado}</span>
                     </div>
                   </div>
                 </div>
@@ -795,7 +801,7 @@ loadLinks().then(renderLinks);`;
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Não foi possível extrair os dados do arquivo</p>
+                <p className="text-sm">Não foi possível extrair os dados do arquivo</p>
               </div>
             )}
           </TabsContent>
@@ -804,10 +810,10 @@ loadLinks().then(renderLinks);`;
             <Textarea
               value={rawText}
               readOnly
-              className="min-h-[200px] bg-muted/20 font-mono text-xs"
+              className="min-h-[150px] sm:min-h-[200px] bg-muted/20 font-mono text-xs resize-none"
               placeholder="Texto original extraído do arquivo aparecerá aqui..."
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               📄 Texto completo extraído do arquivo para referência e debugging.
             </p>
           </TabsContent>
