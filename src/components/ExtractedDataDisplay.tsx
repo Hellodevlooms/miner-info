@@ -61,25 +61,85 @@ export const ExtractedDataDisplay: React.FC<ExtractedDataDisplayProps> = ({ data
   const generatePopupExtensionCode = (data: ExtractedData): string => {
     const fullAddress = `${data.endereco.rua}, ${data.endereco.cidade} - ${data.endereco.estado}, ${data.endereco.cep}, ${data.endereco.pais}`;
     
-    return `// Código para preencher os campos da extensão popup
-document.getElementById('companyName').value = "${data.nome}";
-document.getElementById('cnpj').value = "${data.cnpj}";
-document.getElementById('phone').value = "${data.telefone}";
-document.getElementById('address').value = "${fullAddress}";
-document.getElementById('email').value = "${data.email}";
-document.getElementById('site').value = ""; // Preencher manualmente se necessário
+    return `// =================================================================
+// 🚀 INÍCIO DO CÓDIGO PARA POPUP.JS
+// =================================================================
 
-// Salvar os dados no localStorage para persistência
-localStorage.setItem('companyData', JSON.stringify({
-  companyName: "${data.nome}",
-  cnpj: "${data.cnpj}",
-  phone: "${data.telefone}",
-  address: "${fullAddress}",
-  email: "${data.email}",
-  site: ""
-}));
+// Pequena função para facilitar a seleção de elementos pelo ID
+const $ = (id) => document.getElementById(id);
 
-console.log("Dados preenchidos com sucesso!");`;
+// Evento principal: é acionado quando o HTML do popup está pronto
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Preenche o formulário com os dados que já estão salvos
+  restoreMain();
+
+  // 2. Adiciona a funcionalidade de salvar ao botão com id="saveButton"
+  //    (Certifique-se de que seu botão no HTML tem esse ID)
+  $("saveButton").addEventListener("click", () => {
+    saveMain();
+  });
+});
+
+// ===== Salva os campos principais no armazenamento local =====
+async function saveMain() {
+  // Pega os valores de cada campo do formulário
+  const companyName = $("companyName").value;
+  const cnpj = $("cnpj").value;
+  const phone = $("phone").value;
+  const address = $("address").value;
+  const email = $("email").value;
+  const site = $("site").value;
+  const googleAdsId = $("adsId") ? $("adsId").value : ""; // Pega o ID do Ads se o campo existir
+
+  // Salva todos os valores de uma vez no chrome.storage
+  await chrome.storage.local.set({
+    companyName,
+    cnpj,
+    phone,
+    address,
+    email,
+    site,
+    googleAdsId,
+  });
+
+  // Mostra uma mensagem de confirmação para o usuário
+  const status = $("statusMessage");
+  status.textContent = "Informações salvas com sucesso!";
+  status.style.opacity = 1;
+
+  // Faz a mensagem desaparecer após 2 segundos
+  setTimeout(() => {
+    status.style.opacity = 0;
+  }, 2000);
+}
+
+// ===== Restaura (preenche) os campos principais =====
+async function restoreMain() {
+  const { companyName, cnpj, phone, address, email, site, googleAdsId } =
+    await chrome.storage.local.get([
+      "companyName",
+      "cnpj",
+      "phone",
+      "address",
+      "email",
+      "site",
+      "googleAdsId",
+    ]);
+
+  // Preenche cada campo se o valor correspondente existir
+  // DADOS EXTRAÍDOS AUTOMATICAMENTE:
+  if (companyName || "${data.nome}") $("companyName").value = companyName || "${data.nome}";
+  if (cnpj || "${data.cnpj}") $("cnpj").value = cnpj || "${data.cnpj}";
+  if (phone || "${data.telefone}") $("phone").value = phone || "${data.telefone}";
+  if (address || "${fullAddress}") $("address").value = address || "${fullAddress}";
+  if (email || "${data.email}") $("email").value = email || "${data.email}";
+  if (site) $("site").value = site;
+  if (googleAdsId && $("adsId")) $("adsId").value = googleAdsId;
+}
+
+// =================================================================
+// 🚀 FIM DO CÓDIGO PARA POPUP.JS
+// =================================================================`;
   };
 
   const jsCode = data ? generateJavaScriptCode(data) : '';
