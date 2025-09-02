@@ -40,64 +40,47 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
   const { toast } = useToast();
 
   const extractDataFromText = (text: string): ExtractedData => {
-    // Normaliza quebras de linha para regex mais preciso
-    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    // Normaliza quebras de linha e remove espaços duplos para facilitar a busca
+    const normalized = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n /g, '\n');
 
-    // Escapa rótulos com caracteres especiais (/, (), etc.)
-    const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Extrai o valor que aparece na linha seguinte ao rótulo ou na mesma linha após ':'
-    const extractLineAfter = (label: string) => {
-      const l = esc(label);
-      const patterns = [
-        new RegExp(`${l}\\s*[\\r\\n]+\\s*([^\\r\\n]+)`, 'i'), // rótulo em uma linha e valor na próxima
-        new RegExp(`${l}\\s*[:\\-]?\\s*([^\\r\\n]+)`, 'i'),      // rótulo e valor na mesma linha
-      ];
-      for (const p of patterns) {
-        const m = normalized.match(p);
-        if (m) return m[1].trim();
-      }
-      return null;
+    /**
+     * Função auxiliar para extrair dados.
+     * Procura por um rótulo (com variações de espaço) e captura o valor na linha seguinte.
+     * @param labelRegex - Uma expressão regular para encontrar o rótulo. Ex: /NOME\s+EMPRESARIAL/i
+     * @returns O valor encontrado ou null.
+     */
+    const findValueAfterLabel = (labelRegex: RegExp): string | null => {
+      const match = normalized.match(new RegExp(labelRegex.source + '\\s*\\n\\s*([^\\n]+)', 'i'));
+      return match ? match[1].trim() : null;
     };
 
-    const nome = extractLineAfter('NOME EMPRESARIAL')
-      || normalized.match(/(?:nome empresarial|razao social|empresa)[:\s]*([^\n\r]+)/i)?.[1]?.trim()
-      || 'NÃO ENCONTRADO';
+    // Usando as funções de busca aprimoradas
+    const nome = findValueAfterLabel(/NOME\s+EMPRESARIAL/);
+    const cnpj = findValueAfterLabel(/NUMERO\s+DE\s+INSCRIÇÃO/);
+    const telefone = findValueAfterLabel(/TELEFONE/);
+    const email = findValueAfterLabel(/ENDEREÇO\s+ELETRONICO/);
+    const logradouro = findValueAfterLabel(/LOGRADOURO/);
+    const numero = findValueAfterLabel(/NUMERO/);
+    const complemento = findValueAfterLabel(/COMPLEMENTO/);
+    const bairro = findValueAfterLabel(/BAIRRO\/DISTRITO|BAIRRO/);
+    const cep = findValueAfterLabel(/CEP/);
+    const cidade = findValueAfterLabel(/MUNICIPIO/);
+    const estado = findValueAfterLabel(/UF/);
 
-    const cnpj = extractLineAfter('NUMERO DE INSCRIÇÃO')
-      || normalized.match(/(?:cnpj|cadastro)[:\s]*([0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/[0-9]{4}-?[0-9]{2})/i)?.[1]?.trim()
-      || 'NÃO ENCONTRADO';
-
-    const telefone = extractLineAfter('TELEFONE')
-      || normalized.match(/(?:telefone|fone|tel)[:\s]*(\(?[0-9]{2}\)?[.\s-]?[0-9]{4,5}[.\s-]?[0-9]{4})/i)?.[1]?.trim()
-      || 'NÃO ENCONTRADO';
-
-    const email = extractLineAfter('ENDEREÇO ELETRONICO')
-      || normalized.match(/(?:email|e-mail|endereco eletronico)[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i)?.[1]?.trim()
-      || 'NÃO ENCONTRADO';
-
-    const logradouro = extractLineAfter('LOGRADOURO') || '';
-    const numero = extractLineAfter('NUMERO') || '';
-    const complemento = extractLineAfter('COMPLEMENTO') || '';
-    const bairro = extractLineAfter('BAIRRO/DISTRITO') || extractLineAfter('BAIRRO') || 'NÃO ENCONTRADO';
-    const cep = extractLineAfter('CEP') || 'NÃO ENCONTRADO';
-    const cidade = extractLineAfter('MUNICIPIO') || 'NÃO ENCONTRADO';
-    const estado = extractLineAfter('UF') || 'NÃO ENCONTRADO';
-
-    const rua = [logradouro, numero].filter(Boolean).join(' ').trim() || 'Rua não encontrada';
+    const rua = [logradouro, numero].filter(Boolean).join(' ').trim();
 
     return {
-      nome: nome || 'Nome não encontrado',
-      cnpj: cnpj || 'CNPJ não encontrado',
-      telefone: telefone || 'Telefone não encontrado',
-      email: email || 'Email não encontrado',
+      nome: nome || 'NÃO ENCONTRADO',
+      cnpj: cnpj || 'NÃO ENCONTRADO',
+      telefone: telefone || 'NÃO ENCONTRADO',
+      email: email || 'NÃO ENCONTRADO',
       endereco: {
-        rua,
+        rua: rua || 'Rua não encontrada',
         complemento: complemento || '',
-        bairro: bairro || 'Bairro não encontrado',
-        cep: cep || 'CEP não encontrado',
-        cidade: cidade || 'Cidade não encontrada',
-        estado: (estado && estado !== 'NÃO ENCONTRADO') ? estado : 'UF',
+        bairro: bairro || 'NÃO ENCONTRADO',
+        cep: cep || 'NÃO ENCONTRADO',
+        cidade: cidade || 'NÃO ENCONTRADO',
+        estado: estado || 'UF',
         pais: 'Brasil',
       },
     };
@@ -114,12 +97,13 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
       const pageText = textContent.items
         .map((item: any) => {
           const s = item.str || '';
+          // Adiciona espaço ou nova linha baseado no hasEOL para manter a estrutura
           const eol = item.hasEOL === true ? '\n' : ' ';
           return s + eol;
         })
         .join('')
-        .replace(/[ \t]+\n/g, '\n')
-        .replace(/\n{2,}/g, '\n');
+        .replace(/[ \t]+\n/g, '\n') // Limpa espaços antes de novas linhas
+        .replace(/\n{2,}/g, '\n'); // Limpa múltiplas novas linhas
       fullText += pageText + '\n';
     }
 
