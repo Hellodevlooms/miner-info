@@ -5,9 +5,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Lock, Mail, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoginProps {
-  onLogin: (email: string) => void;
+  onLogin: () => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -30,15 +31,34 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setIsLoading(true);
     
-    // Simulate login delay
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Login bem-sucedido!",
-        description: "Bem-vindo ao Extrator de PDFs.",
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      onLogin(email);
-    }, 1500);
+
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Login bem-sucedido!",
+          description: "Bem-vindo ao Extrator de PDFs.",
+        });
+        onLogin();
+      }
+    } catch (error) {
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro durante o login.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -99,7 +119,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <div className="mt-6 p-4 bg-accent/10 rounded-lg border border-accent/20">
               <p className="text-sm text-accent-foreground/80 text-center">
-                💡 Para autenticação real, conecte o Supabase clicando no botão verde no topo da página
+                🔐 Acesso restrito aos usuários cadastrados no sistema
               </p>
             </div>
           </CardContent>
