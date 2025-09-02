@@ -44,8 +44,10 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
 
     const findValueAfterLabel = (labelRegex: RegExp): string | null => {
       // Esta regex busca pelo rótulo e captura o conteúdo da próxima linha não vazia.
-      const match = normalized.match(new RegExp(labelRegex.source + '\\s*\\n\\s*([^\\n]+)', 'i'));
-      return match && match[1] ? match[1].trim() : null;
+      const combined = new RegExp(labelRegex.source + '\\s*\\n\\s*([^\\n]+)', 'i');
+      const match = normalized.match(combined);
+      const captured = match ? match[match.length - 1] : null; // último grupo é sempre o valor
+      return captured ? captured.trim() : null;
     };
 
     // ****** EXPRESSÕES REGULARES CORRIGIDAS COM ACENTOS E Ç ******
