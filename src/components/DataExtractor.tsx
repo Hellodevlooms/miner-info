@@ -40,33 +40,29 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
   const { toast } = useToast();
 
   const extractDataFromText = (text: string): ExtractedData => {
-    // Normaliza quebras de linha e remove espaços duplos para facilitar a busca
     const normalized = text.replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/\n /g, '\n');
 
-    /**
-     * Função auxiliar para extrair dados.
-     * Procura por um rótulo (com variações de espaço) e captura o valor na linha seguinte.
-     * @param labelRegex - Uma expressão regular para encontrar o rótulo. Ex: /NOME\s+EMPRESARIAL/i
-     * @returns O valor encontrado ou null.
-     */
     const findValueAfterLabel = (labelRegex: RegExp): string | null => {
+      // Esta regex busca pelo rótulo e captura o conteúdo da próxima linha não vazia.
       const match = normalized.match(new RegExp(labelRegex.source + '\\s*\\n\\s*([^\\n]+)', 'i'));
       return match && match[1] ? match[1].trim() : null;
     };
 
-    // Usando as funções de busca aprimoradas
+    // ****** EXPRESSÕES REGULARES CORRIGIDAS COM ACENTOS E Ç ******
+    // Cada linha foi atualizada para corresponder exatamente ao "Texto Original" do PDF.
+    
     const nome = findValueAfterLabel(/NOME\s+EMPRESARIAL/);
-    const cnpj = findValueAfterLabel(/NUMERO\s+DE\s+INSCRIÇÃO/);
+    const cnpj = findValueAfterLabel(/NÚMERO\s+DE\s+INSCRIÇÃO/); // Corrigido: NÚMERO e INSCRIÇÃO
     const telefone = findValueAfterLabel(/TELEFONE/);
-    const email = findValueAfterLabel(/ENDEREÇO\s+ELETRONICO/);
+    const email = findValueAfterLabel(/ENDEREÇO\s+ELETRÔNICO/); // Corrigido: ENDEREÇO e ELETRÔNICO
     const logradouro = findValueAfterLabel(/LOGRADOURO/);
-    const numero = findValueAfterLabel(/NUMERO/);
+    const numero = findValueAfterLabel(/NÚMERO/); // Corrigido: NÚMERO
     const complemento = findValueAfterLabel(/COMPLEMENTO/);
     const bairro = findValueAfterLabel(/BAIRRO\/DISTRITO|BAIRRO/);
     const cep = findValueAfterLabel(/CEP/);
-    const cidade = findValueAfterLabel(/MUNICIPIO/);
+    const cidade = findValueAfterLabel(/MUNICÍPIO/); // Corrigido: MUNICÍPIO
     const estado = findValueAfterLabel(/UF/);
-
+    
     const rua = [logradouro, numero].filter(Boolean).join(' ').trim();
 
     return {
