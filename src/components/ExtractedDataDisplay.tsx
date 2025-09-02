@@ -629,7 +629,7 @@ loadLinks().then(renderLinks);`;
   };
 
   return (
-    <Card className="bg-card/30 backdrop-blur-sm max-w-full">
+    <Card className="bg-card/30 backdrop-blur-sm max-w-4xl mx-auto">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
           <Code className="w-5 h-5 text-primary" />
