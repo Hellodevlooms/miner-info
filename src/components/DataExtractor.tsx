@@ -51,7 +51,7 @@ export const DataExtractor: React.FC<DataExtractorProps> = ({ userEmail, onLogou
      */
     const findValueAfterLabel = (labelRegex: RegExp): string | null => {
       const match = normalized.match(new RegExp(labelRegex.source + '\\s*\\n\\s*([^\\n]+)', 'i'));
-      return match ? match[1].trim() : null;
+      return match && match[1] ? match[1].trim() : null;
     };
 
     // Usando as funções de busca aprimoradas

@@ -23,7 +23,7 @@ interface ExtractedData {
 }
 
 interface ExtractedDataDisplayProps {
-  data: ExtractedData;
+  data: ExtractedData | null;
   rawText: string;
 }
 
@@ -57,9 +57,11 @@ export const ExtractedDataDisplay: React.FC<ExtractedDataDisplayProps> = ({ data
 };`;
   };
 
-  const jsCode = generateJavaScriptCode(data);
+  const jsCode = data ? generateJavaScriptCode(data) : '';
 
   const handleCopyCode = async () => {
+    if (!data) return;
+    
     try {
       await navigator.clipboard.writeText(jsCode);
       setCopied(true);
@@ -87,13 +89,13 @@ export const ExtractedDataDisplay: React.FC<ExtractedDataDisplayProps> = ({ data
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="code" className="w-full">
+        <Tabs defaultValue={data ? "code" : "raw"} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="code" className="flex items-center gap-2">
+            <TabsTrigger value="code" className="flex items-center gap-2" disabled={!data}>
               <Code className="w-4 h-4" />
               Código JS
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2">
+            <TabsTrigger value="preview" className="flex items-center gap-2" disabled={!data}>
               <Eye className="w-4 h-4" />
               Visualização
             </TabsTrigger>
@@ -104,91 +106,107 @@ export const ExtractedDataDisplay: React.FC<ExtractedDataDisplayProps> = ({ data
           </TabsList>
 
           <TabsContent value="code" className="space-y-4">
-            <div className="relative">
-              <pre className="bg-muted/20 p-4 rounded-lg text-sm overflow-x-auto border">
-                <code>{jsCode}</code>
-              </pre>
-              
-              <Button
-                onClick={handleCopyCode}
-                className="absolute top-2 right-2 bg-gradient-primary hover:scale-105 transition-all duration-200"
-                size="sm"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Código
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            <p className="text-sm text-muted-foreground">
-              ✨ Código JavaScript pronto para uso com todos os dados extraídos do arquivo.
-            </p>
+            {data ? (
+              <>
+                <div className="relative">
+                  <pre className="bg-muted/20 p-4 rounded-lg text-sm overflow-x-auto border">
+                    <code>{jsCode}</code>
+                  </pre>
+                  
+                  <Button
+                    onClick={handleCopyCode}
+                    className="absolute top-2 right-2 bg-gradient-primary hover:scale-105 transition-all duration-200"
+                    size="sm"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copiar Código
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  ✨ Código JavaScript pronto para uso com todos os dados extraídos do arquivo.
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Não foi possível extrair os dados do arquivo</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="preview" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-3">
-                <h3 className="font-semibold text-primary">Dados da Empresa</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Nome:</span>
-                    <span className="font-medium">{data.nome}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">CNPJ:</span>
-                    <span className="font-mono">{data.cnpj}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Telefone:</span>
-                    <span>{data.telefone}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">E-mail:</span>
-                    <span className="break-all">{data.email}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="font-semibold text-primary">Endereço</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Rua:</span>
-                    <span className="font-medium text-right">{data.endereco.rua}</span>
-                  </div>
-                  {data.endereco.complemento && (
+            {data ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-primary">Dados da Empresa</h3>
+                  <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Complemento:</span>
-                      <span>{data.endereco.complemento}</span>
+                      <span className="text-muted-foreground">Nome:</span>
+                      <span className="font-medium">{data.nome}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Bairro:</span>
-                    <span>{data.endereco.bairro}</span>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">CNPJ:</span>
+                      <span className="font-mono">{data.cnpj}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Telefone:</span>
+                      <span>{data.telefone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">E-mail:</span>
+                      <span className="break-all">{data.email}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">CEP:</span>
-                    <span className="font-mono">{data.endereco.cep}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Cidade:</span>
-                    <span>{data.endereco.cidade}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Estado:</span>
-                    <span>{data.endereco.estado}</span>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-primary">Endereço</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Rua:</span>
+                      <span className="font-medium text-right">{data.endereco.rua}</span>
+                    </div>
+                    {data.endereco.complemento && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Complemento:</span>
+                        <span>{data.endereco.complemento}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Bairro:</span>
+                      <span>{data.endereco.bairro}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">CEP:</span>
+                      <span className="font-mono">{data.endereco.cep}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cidade:</span>
+                      <span>{data.endereco.cidade}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Estado:</span>
+                      <span>{data.endereco.estado}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Não foi possível extrair os dados do arquivo</p>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="raw" className="space-y-4">
